@@ -28,12 +28,18 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+   
     const userDB = client.db("UserDB");
     const userList = userDB.collection("userList");
 
-    app.post('/user', async(req, res)=>{
+    app.get('/users', async(req, res)=>{
+      const users = await userList.find().toArray();
+      res.send(users);
+    })
+
+    app.post('/users', async(req, res)=>{
         const user = req.body;
+        console.log(user);  
         const result = await userList.insertOne(user);
         res.send(result);
     })
@@ -41,10 +47,9 @@ async function run() {
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
-  }
+  } catch (error) {
+    console.error("Failed to connect to MongoDB", error);
+}
 }
 run().catch(console.dir);
 
