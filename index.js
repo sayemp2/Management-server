@@ -3,7 +3,7 @@ const cors = require('cors');
 require('dotenv').config()
 const app = express();
 const port = process.env.PORT || 3000
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
 app.use(cors());
@@ -28,20 +28,49 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-   
+
     const userDB = client.db("UserDB");
     const userList = userDB.collection("userList");
 
-    app.get('/users', async(req, res)=>{
+    app.get('/users', async (req, res) => {
       const users = await userList.find().toArray();
       res.send(users);
     })
 
-    app.post('/users', async(req, res)=>{
-        const user = req.body;
-        console.log(user);  
-        const result = await userList.insertOne(user);
-        res.send(result);
+    app.get('/users/:id', async (req, res) => {
+      const id = req.params.id;
+      const user = { _id: new ObjectId(id) };
+      const result = await userList.findOne(user);
+      res.send(result);
+    })
+
+    app.put('/users/:id', async (req, res) => {
+      const id = req.params.id;
+      const user = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const option = { upsert: true };
+      const updateUser = {
+        $set: {
+          name: user.name,
+          email: user.email,
+        }
+      }
+      const result = await userList.updateOne(filter, updateUser, option);
+      res.send(result);
+    })
+
+    app.post('/users', async (req, res) => {
+      const user = req.body;
+      console.log(user);
+      const result = await userList.insertOne(user);
+      res.send(result);
+    })
+
+    app.delete('/users/:id', async (req, res) => {
+      const id = req.params.id
+      const user = { _id: new ObjectId(id) };
+      const result = await userList.deleteOne(user);
+      res.send(result)
     })
 
     // Send a ping to confirm a successful connection
@@ -49,16 +78,16 @@ async function run() {
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } catch (error) {
     console.error("Failed to connect to MongoDB", error);
-}
+  }
 }
 run().catch(console.dir);
 
 
 
 
-app.get('/', (req,res)=>{
-    res.send('Connect with Management server')
+app.get('/', (req, res) => {
+  res.send('Connect with Management server')
 })
-app.listen(port,()=>{
-    console.log(`connect with management server ${port}`);
+app.listen(port, () => {
+  console.log(`connect with management server ${port}`);
 })
